@@ -2,6 +2,8 @@ from fastapi import FastAPI, Query
 from pydantic import BaseModel
 from typing import List, Optional
 
+from app.api.Job import Job
+
 app = FastAPI()
 
 
@@ -10,17 +12,6 @@ class Resource(BaseModel):
     resource_ID: str
     profile: str
     private: bool
-    disable: bool
-
-
-class Job(BaseModel):
-    job_ID: str
-    role: str
-    technology: str
-    domain: str
-    matching_threshold: float
-    priority: str
-    hire: bool
     disable: bool
 
 
