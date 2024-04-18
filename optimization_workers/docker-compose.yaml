@@ -7,16 +7,25 @@ services:
       - mongodb:/data/db
     networks:
       - app-network
+    ports:
+      - "27017:27017"
 
  redis:
     image: redis:latest
     restart: always
     networks:
       - app-network
+    ports:
+      - "6379:6379"
 
  worker:
+    environment:
+      MONGO_URI: "mongodb://mongodb:27017/rmo_database"
+      REDIS_URL: "redis://redis:6379"
+
     build: .
     restart: always
+
     depends_on:
       - mongodb
       - redis
