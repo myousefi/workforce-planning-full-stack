@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "optimization-workers"
+version = "0.1.0"
+description = "modules and functions designed to handle background tasks related to optimization processes"
+authors = ["Mojtaba Yousefi <mojtaba.yousefi@live.com>"]
+readme = "README.md"
+packages = [{include = "optimization_workers"}]
+
+[tool.poetry.dependencies]
+python = "^3.11,<3.12"
+pymongo = "^4.6.3"
+redis = "^5.0.3"
+gurobi-optimods = "^1.1.0"
+pytest = "^8.1.1"
+celery = "^5.4.0"
+fastapi = "^0.110.1"
+pydantic = "^2.7.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
