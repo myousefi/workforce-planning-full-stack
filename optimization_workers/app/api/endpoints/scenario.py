@@ -1,60 +1,90 @@
 from typing import Optional
 
-from fastapi import Query
+from fastapi import Query, HTTPException
+from pymongo.errors import DuplicateKeyError
 
 from app.api.main import app
 from app.api.models.scenario import Scenario, ScenarioInput
+from app.services.database.mongodb import db
 
 
 @app.post("/rmo/api/v1/library/{sid}")
 def import_scenario(sid: str):
-    # TODO: Implement import scenario logic
-    return {"message": "Scenario imported"}
+    try:
+        scenario = db.scenarios.find_one({"_id": sid})
+        if scenario:
+            db.library.insert_one(scenario)
+            return {"message": "Scenario imported"}
+        else:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+    except DuplicateKeyError:
+        raise HTTPException(
+            status_code=400, detail="Scenario already exists in the library"
+        )
 
 
 @app.get("/rmo/api/v1/library")
 def list_library_scenarios():
-    # TODO: Implement list library scenarios logic
-    return [Scenario()]
+    scenarios = list(db.library.find())
+    return [Scenario(**scenario) for scenario in scenarios]
 
 
 @app.delete("/rmo/api/v1/library/{sid}")
 def delete_library_scenario(sid: str):
-    # TODO: Implement delete library scenario logic
-    return {"message": "Scenario deleted"}
+    result = db.library.delete_one({"_id": sid})
+    if result.deleted_count == 1:
+        return {"message": "Scenario deleted"}
+    else:
+        raise HTTPException(status_code=404, detail="Scenario not found")
 
 
 @app.get("/rmo/api/v1/scenarios")
 def list_scenarios():
-    # TODO: Implement list scenarios logic
-    return [Scenario()]
+    scenarios = list(db.scenarios.find())
+    return [Scenario(**scenario) for scenario in scenarios]
 
 
 @app.post("/rmo/api/v1/scenarios")
 def create_scenario(scenario: ScenarioInput, source: Optional[str] = Query("")):
-    # TODO: Implement create scenario logic
-    return {"message": "Scenario created"}
+    scenario_dict = scenario.dict()
+    scenario_dict["source"] = source
+    try:
+        result = db.scenarios.insert_one(scenario_dict)
+        scenario_dict["_id"] = str(result.inserted_id)
+        return {"message": "Scenario created", "scenario": Scenario(**scenario_dict)}
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail="Scenario already exists")
 
 
 @app.delete("/rmo/api/v1/scenarios")
 def delete_all_scenarios():
-    # TODO: Implement delete all scenarios logic
+    db.scenarios.delete_many({})
     return {"message": "All scenarios deleted"}
 
 
 @app.get("/rmo/api/v1/scenarios/{sid}")
 def get_scenario(sid: str):
-    # TODO: Implement get scenario logic
-    return Scenario()
+    scenario = db.scenarios.find_one({"_id": sid})
+    if scenario:
+        return Scenario(**scenario)
+    else:
+        raise HTTPException(status_code=404, detail="Scenario not found")
 
 
 @app.put("/rmo/api/v1/scenarios/{sid}")
 def update_scenario(sid: str, scenario: Scenario):
-    # TODO: Implement update scenario logic
-    return {"message": "Scenario updated"}
+    scenario_dict = scenario.dict(exclude_unset=True)
+    result = db.scenarios.update_one({"_id": sid}, {"$set": scenario_dict})
+    if result.modified_count == 1:
+        return {"message": "Scenario updated"}
+    else:
+        raise HTTPException(status_code=404, detail="Scenario not found")
 
 
 @app.delete("/rmo/api/v1/scenarios/{sid}")
 def delete_scenario(sid: str):
-    # TODO: Implement delete scenario logic
-    return {"message": "Scenario deleted"}
+    result = db.scenarios.delete_one({"_id": sid})
+    if result.deleted_count == 1:
+        return {"message": "Scenario deleted"}
+    else:
+        raise HTTPException(status_code=404, detail="Scenario not found")
