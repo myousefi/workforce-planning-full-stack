@@ -9,7 +9,7 @@ services:
       - app-network
     ports:
       - "27017:27017"
-
+    command: mongod
   redis:
     image: redis:latest
     restart: always
@@ -17,14 +17,18 @@ services:
       - app-network
     ports:
       - "6379:6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
   api:
     environment:
       MONGO_URI: "mongodb://mongodb:27017/rmo_database"
       REDIS_URL: "redis://redis:6379"
     build: .
     ports:
-      - "8000:8080"
-    command: uvicorn app.api.main:app --host 127.0.0.1 --port 8000 --reload
+      - "8000:8000"
+    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/app
     restart: always
@@ -47,12 +51,13 @@ services:
       - redis
       - mongodb
     restart: always
+    user: "1000:1000"  # Specify a non-root user
 
   flower:
     build: .
     command: celery -A app.tasks.celery_worker flower --port=5555
     ports:
-      - "5556:5555"
+      - "5555:5555"
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=mongodb://mongodb:27017/rmo_database
