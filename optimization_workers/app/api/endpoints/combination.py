@@ -1,16 +1,17 @@
-from fastapi import HTTPException
-from app.api.main import app
+from fastapi import HTTPException, APIRouter
 from app.api.models.combination import Combination
 from app.services.database.mongodb import db
 
+router = APIRouter()
 
-@app.get("/rmo/api/v1/scenarios/{sid}/combinations")
+
+@router.get("/rmo/api/v1/scenarios/{sid}/combinations")
 def list_combinations(sid: str):
     combinations = db.combinations.find({"scenario_id": sid})
     return [Combination(**combination) for combination in combinations]
 
 
-@app.post("/rmo/api/v1/scenarios/{sid}/combinations")
+@router.post("/rmo/api/v1/scenarios/{sid}/combinations")
 def create_combination(sid: str, combination: Combination):
     combination_data = combination.dict()
     combination_data["scenario_id"] = sid
@@ -19,13 +20,13 @@ def create_combination(sid: str, combination: Combination):
     return Combination(**combination_data)
 
 
-@app.delete("/rmo/api/v1/scenarios/{sid}/combinations")
+@router.delete("/rmo/api/v1/scenarios/{sid}/combinations")
 def delete_all_combinations(sid: str):
     db.combinations.delete_many({"scenario_id": sid})
     return {"message": "All combinations deleted"}
 
 
-@app.get("/rmo/api/v1/scenarios/{sid}/combinations/{id}")
+@router.get("/rmo/api/v1/scenarios/{sid}/combinations/{id}")
 def get_combination(sid: str, id: str):
     combination = db.combinations.find_one({"_id": id, "scenario_id": sid})
     if combination:
@@ -33,7 +34,7 @@ def get_combination(sid: str, id: str):
     raise HTTPException(status_code=404, detail="Combination not found")
 
 
-@app.put("/rmo/api/v1/scenarios/{sid}/combinations/{id}")
+@router.put("/rmo/api/v1/scenarios/{sid}/combinations/{id}")
 def update_combination(sid: str, id: str, combination: Combination):
     combination_data = combination.dict(exclude_unset=True)
     result = db.combinations.update_one(
@@ -44,7 +45,7 @@ def update_combination(sid: str, id: str, combination: Combination):
     raise HTTPException(status_code=404, detail="Combination not found")
 
 
-@app.delete("/rmo/api/v1/scenarios/{sid}/combinations/{id}")
+@router.delete("/rmo/api/v1/scenarios/{sid}/combinations/{id}")
 def delete_combination(sid: str, id: str):
     result = db.combinations.delete_one({"_id": id, "scenario_id": sid})
     if result.deleted_count:

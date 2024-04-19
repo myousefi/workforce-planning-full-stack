@@ -1,14 +1,16 @@
 from typing import Optional
 
-from fastapi import Query, HTTPException
+from fastapi import Query, HTTPException, APIRouter
 from pymongo.errors import DuplicateKeyError
 
-from app.api.main import app
 from app.api.models.scenario import Scenario, ScenarioInput
 from app.services.database.mongodb import db
 
 
-@app.post("/rmo/api/v1/library/{sid}")
+router = APIRouter()
+
+
+@router.post("/rmo/api/v1/library/{sid}")
 def import_scenario(sid: str):
     try:
         scenario = db.scenarios.find_one({"_id": sid})
@@ -23,13 +25,13 @@ def import_scenario(sid: str):
         )
 
 
-@app.get("/rmo/api/v1/library")
+@router.get("/rmo/api/v1/library")
 def list_library_scenarios():
     scenarios = list(db.library.find())
     return [Scenario(**scenario) for scenario in scenarios]
 
 
-@app.delete("/rmo/api/v1/library/{sid}")
+@router.delete("/rmo/api/v1/library/{sid}")
 def delete_library_scenario(sid: str):
     result = db.library.delete_one({"_id": sid})
     if result.deleted_count == 1:
@@ -38,13 +40,13 @@ def delete_library_scenario(sid: str):
         raise HTTPException(status_code=404, detail="Scenario not found")
 
 
-@app.get("/rmo/api/v1/scenarios")
+@router.get("/rmo/api/v1/scenarios")
 def list_scenarios():
     scenarios = list(db.scenarios.find())
     return [Scenario(**scenario) for scenario in scenarios]
 
 
-@app.post("/rmo/api/v1/scenarios")
+@router.post("/rmo/api/v1/scenarios")
 def create_scenario(scenario: ScenarioInput, source: Optional[str] = Query("")):
     scenario_dict = scenario.dict()
     scenario_dict["source"] = source
@@ -56,13 +58,13 @@ def create_scenario(scenario: ScenarioInput, source: Optional[str] = Query("")):
         raise HTTPException(status_code=400, detail="Scenario already exists")
 
 
-@app.delete("/rmo/api/v1/scenarios")
+@router.delete("/rmo/api/v1/scenarios")
 def delete_all_scenarios():
     db.scenarios.delete_many({})
     return {"message": "All scenarios deleted"}
 
 
-@app.get("/rmo/api/v1/scenarios/{sid}")
+@router.get("/rmo/api/v1/scenarios/{sid}")
 def get_scenario(sid: str):
     scenario = db.scenarios.find_one({"_id": sid})
     if scenario:
@@ -71,7 +73,7 @@ def get_scenario(sid: str):
         raise HTTPException(status_code=404, detail="Scenario not found")
 
 
-@app.put("/rmo/api/v1/scenarios/{sid}")
+@router.put("/rmo/api/v1/scenarios/{sid}")
 def update_scenario(sid: str, scenario: Scenario):
     scenario_dict = scenario.dict(exclude_unset=True)
     result = db.scenarios.update_one({"_id": sid}, {"$set": scenario_dict})
@@ -81,7 +83,7 @@ def update_scenario(sid: str, scenario: Scenario):
         raise HTTPException(status_code=404, detail="Scenario not found")
 
 
-@app.delete("/rmo/api/v1/scenarios/{sid}")
+@router.delete("/rmo/api/v1/scenarios/{sid}")
 def delete_scenario(sid: str):
     result = db.scenarios.delete_one({"_id": sid})
     if result.deleted_count == 1:
