@@ -23,8 +23,8 @@ services:
       REDIS_URL: "redis://redis:6379"
     build: .
     ports:
-      - "800:8080"
-    command: uvicorn main:app --host 0.0.0.0 --reload
+      - "8000:8080"
+    command: uvicorn app.api.main:app --host 127.0.0.1 --port 8000 --reload
     volumes:
       - .:/app
     restart: always
@@ -35,10 +35,10 @@ services:
       - app-network
 
   worker:
-    build: ./app
-    command: celery -A tasks.celery_worker worker --loglevel=info --logfile=logs/celery.log
+    build: .
+    command: celery -A app.tasks.celery_worker worker --loglevel=info --logfile=app/logs/celery.log
     volumes:
-      - ./app:/app
+      - .:/app
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=mongodb://mongodb:27017/rmo_database
@@ -47,6 +47,22 @@ services:
       - redis
       - mongodb
     restart: always
+
+  flower:
+    build: .
+    command: celery -A app.tasks.celery_worker flower --port=5555
+    ports:
+      - "5556:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=mongodb://mongodb:27017/rmo_database
+    depends_on:
+      - worker
+      - redis
+      - mongodb
+    restart: always
+    networks:
+      - app-network
 
 volumes:
  mongodb:

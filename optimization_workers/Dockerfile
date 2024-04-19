@@ -8,4 +8,4 @@ RUN pip install poetry && poetry config virtualenvs.create false && poetry insta
 
 COPY . .
 
-CMD ["python", "worker.py"]
+CMD ["python", "app/tasks/celery_worker.py"]
