@@ -21,9 +21,9 @@ services:
     environment:
       MONGO_URI: "mongodb://mongodb:27017/rmo_database"
       REDIS_URL: "redis://redis:6379"
-    build: ./api
+    build: .
     ports:
-      - "80:8000"
+      - "800:8080"
     command: uvicorn main:app --host 0.0.0.0 --reload
     volumes:
       - .:/app
@@ -38,10 +38,10 @@ services:
     build: ./app
     command: celery -A tasks.celery_worker worker --loglevel=info --logfile=logs/celery.log
     volumes:
-      - ./app:/usr/src/app
+      - ./app:/app
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=mongodb://mongodb:27017
+      - CELERY_RESULT_BACKEND=mongodb://mongodb:27017/rmo_database
     depends_on:
       - api
       - redis
